@@ -16,7 +16,8 @@ class Vworld_Api:
             "key": self.api_key,  # API 키 직접 사용
             "service": "address",
             "request": "getcoord",
-            "crs": "epsg:3857",
+            # "crs": "epsg:3857",
+            "crs" : "epsg:4326",
             "address": address,
             "format": "json",
             "type": "parcel"})
@@ -57,7 +58,8 @@ class Vworld_Api:
             "format": "json",
             "geometry": "true",
             "attribute": "true",
-            "crs": "epsg:3857",
+            # "crs": "epsg:3857",
+            "crs" : "epsg:4326",
             "domain": "www.v-world-test.com"
         })
 
