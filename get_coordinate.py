@@ -73,6 +73,27 @@ def get_land_polygon(api_key, x, y, dataset="LP_PA_CBND_BUBUN"):
         return _coordinates
 
 
+def get_land_info(api_key, pnu_code):
+    url = "https://api.vworld.kr/ned/data/getLandCharacteristics"
+    queryParams = "?" + urlencode({
+        "key": api_key,
+        "pnu": pnu_code,
+        "format": "json",
+        "numOfRows": "100",
+        "pageNo": "1",
+        "domain": "www.v-world-test.com"
+    })
+
+    request = Request(url + queryParams)
+    response_body = urlopen(request).read()
+    text_str = response_body.decode('utf-8')
+    json_data = json.loads(text_str)
+
+    land_area = json_data['landCharacteristicss']['field'][0]['lndpclAr']
+    nomination_name = json_data['landCharacteristicss']['field'][0]['lndcgrCodeNm']
+
+    return land_area, nomination_name
+
 def save_to_geojson(data, output_file):
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
@@ -84,8 +105,8 @@ PUBLIC_API_KEY = "1rTRcPcrgRX4bckCMPyIIgsMgxqzwZwAKsqCjJe74xrEwdc2rQRZgHAZ60aJdh
 
 
 # CSV 파일에서 주소 읽기
-input_csv = "25년_김제필지_가루쌀.csv"  # CSV 파일 경로
-output_file = "김제_가루쌀.geojson"  # 결과 GeoJSON 파일 경로
+input_csv = "25년_상주필지.csv"  # CSV 파일 경로
+output_file = "상주_콩.geojson"  # 결과 GeoJSON 파일 경로
 
 # 주소 데이터 불러오기
 addresses_df = pd.read_csv(input_csv)
@@ -100,6 +121,7 @@ for index, row in addresses_df.iterrows():
     address = row['address']
     owner = row['owner']  # owner 필드 추가
     crop = row['crop']
+    doublecrop = row['double-crop']
     print(f"Processing address: {address}")
 
     # 주소를 좌표로 변환
@@ -110,9 +132,16 @@ for index, row in addresses_df.iterrows():
         polygon_data = get_land_polygon(VWORLD_API_KEY, lng, lat)
 
         if polygon_data:
+
+            # Land info 추가
+            land_area, nomination_name = get_land_info(VWORLD_API_KEY, pnu_code)
+
             # "owner" 속성 추가
             polygon_data['properties']['owner'] = owner
             polygon_data['properties']['crop'] = crop
+            polygon_data['properties']['double_crop'] = doublecrop
+            polygon_data['properties']['land_area'] = land_area
+            polygon_data['properties']['nomination_name'] = nomination_name
 
             # Feature 추가
             geojson_data["features"].append(polygon_data)
